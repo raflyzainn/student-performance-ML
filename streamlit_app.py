@@ -33,6 +33,12 @@ with st.expander('📊 Data Visualization'):
   st.subheader("📊 Rata-rata Skor per Gender")
   st.bar_chart(avg_by_gender)
 
+  st.subheader("📊 Rata-rata Skor per Kategori (contoh: gender)")
+
+  if "gender" in df.columns:
+    avg_by_cat = df.groupby("lunch")[["average_score"]].mean().sort_values(by="average_score", ascending=False)
+    st.bar_chart(avg_by_cat)
+
 
 with st.expander('🧹 Pre-Processing Data'):
     st.markdown("Klik tombol berikut untuk melakukan transformasi:")
