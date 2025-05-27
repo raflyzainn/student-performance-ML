@@ -27,7 +27,7 @@ with st.expander('Data'):
   st.dataframe(y)
 
 # Melihat visualisasi data
-With st.expander('Data Visualization'):
+with st.expander('Data Visualization'):
   # Menghitung rata-rata per gender
   avg_by_gender = df.groupby("gender")[["average_score"]].mean()
   st.subheader("📊 Rata-rata Skor per Gender")
