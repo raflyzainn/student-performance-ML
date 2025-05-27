@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import LabelEncoder
 
 st.title(':mortar_board: Student Performance in Exams by Machine Learning')
 
@@ -42,13 +43,33 @@ with st.expander('📊 Data Visualization'):
 
 
 with st.expander('🧹 Pre-Processing Data'):
-    st.markdown("Klik tombol berikut untuk melakukan transformasi:")
-
-    # Tombol drop missing values
-    if st.button("🧽 Drop Missing Values"):
+    if st.button("Drop Missing Values"):
         df.dropna(inplace=True)
-        st.success("✅ Missing values telah dihapus.")
+        st.success("✅ Missing values dihapus.")
         st.dataframe(df)
+
+    if st.button("🔠 Label Encoding Kolom Kategorikal"):
+        le = LabelEncoder()
+
+        # Encode kolom yang kamu anggap penting (bisa disesuaikan)
+        df['gender'] = le.fit_transform(df['gender'])  # female=0, male=1
+        df['lunch'] = le.fit_transform(df['lunch'])    # free/reduced=0, standard=1
+        df['test preparation course'] = le.fit_transform(df['test preparation course'])
+
+        # OPTIONAL: encode tambahan
+        df['race/ethnicity'] = le.fit_transform(df['race/ethnicity'])
+        df['parental level of education'] = le.fit_transform(df['parental level of education'])
+
+        st.success("✅ Label Encoding selesai.")
+        st.dataframe(df)
+
+    if st.button("🔄 Pisahkan Fitur (X) dan Target (y)"):
+        X = df.drop(columns=['average_score'])
+        y = df['average_score']
+        st.write("🧩 X (fitur):")
+        st.dataframe(X)
+        st.write("🎯 y (target):")
+        st.dataframe(y)
 
     # Tombol encode kategorikal
     if st.button("🔠 Encode Kolom Kategorikal"):
