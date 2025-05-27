@@ -5,7 +5,7 @@ st.title(':mortar_board: Student Performance in Exams by Machine Learning')
 
 st.info('📊 Student Performance Analysis by Machine Learning')
 
-df.columns = df.columns.str.strip()
+df.columns = [str(col).strip() for col in df.columns]
 
 df['average_score'] = df[['math score', 'reading score', 'writing score']].mean(axis=1)
 
