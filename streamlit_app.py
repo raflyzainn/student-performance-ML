@@ -2,6 +2,10 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import numpy as np
 
 st.title(':mortar_board: Student Performance in Exams by Machine Learning')
 st.info('📊 Student Performance Analysis by Machine Learning')
@@ -69,3 +73,40 @@ with st.expander('🧹 Pre-Processing Data'):
         st.dataframe(X)
         st.write("🎯 y (target):")
         st.dataframe(y)
+
+with st.expander('🧠 Training & Evaluation'):
+    if st.button("🚀 Train Model dan Evaluasi"):
+        df = st.session_state.df  # ambil data yang sudah diproses
+        X = df.drop(columns=['average_score'])
+        y = df['average_score']
+
+        # Split data
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42)
+
+        # Buat model dan training
+        model = LinearRegression()
+        model.fit(X_train, y_train)
+
+        # Prediksi
+        y_pred = model.predict(X_test)
+
+        # Evaluasi
+        mae = mean_absolute_error(y_test, y_pred)
+        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+        r2 = r2_score(y_test, y_pred)
+
+        # Tampilkan metrik
+        st.subheader("📈 Evaluasi Model")
+        st.write(f"**MAE (Mean Absolute Error)**: `{mae:.2f}`")
+        st.write(f"**RMSE (Root Mean Squared Error)**: `{rmse:.2f}`")
+        st.write(f"**R² Score**: `{r2:.2f}`")
+
+        # Tampilkan prediksi vs aktual (plot)
+        st.subheader("📊 Plot Prediksi vs Aktual")
+        fig, ax = plt.subplots()
+        ax.scatter(y_test, y_pred, alpha=0.7)
+        ax.set_xlabel("Actual Average Score")
+        ax.set_ylabel("Predicted Average Score")
+        ax.set_title("Actual vs Predicted")
+        st.pyplot(fig)
