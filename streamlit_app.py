@@ -13,10 +13,10 @@ df.columns = [str(col).strip() for col in df.columns]
 df['average_score'] = df[['math score', 'reading score', 'writing score']].mean(axis=1)
 
 # Melihat isi dari dataset 
-with st.expander('Data'):
+with st.expander('📁 Data'):
   st.write('**Raw Data**')
   df
-
+  
   # Menampilkan fitur - fitur yang tersedia
   X = df.drop(columns=['average_score'])
   st.write("🧩 **Features (X)**")
@@ -34,7 +34,7 @@ with st.expander('📊 Data Visualization'):
   st.subheader("📊 Rata-rata Skor per Gender")
   st.bar_chart(avg_by_gender)
 
-  st.subheader("📊 Rata-rata Skor per Kategori (contoh: gender)")
+  st.subheader("🍽️ Rata-Rata Skor Berdasarkan Jenis Lunch")
 
   if "gender" in df.columns:
     avg_by_cat = df.groupby("lunch")[["average_score"]].mean().sort_values(by="average_score", ascending=False)
