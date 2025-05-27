@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import numpy as np
 
@@ -52,27 +54,28 @@ with st.expander('🧹 Pre-Processing Data'):
         st.success("✅ Label Encoding dan StandardScaler selesai diterapkan.")
         st.dataframe(df_encoded)
 
-# ===== Training & Evaluation untuk Tiap Skor =====
-with st.expander('🧠 Training & Evaluation per Skor'):
-    if st.button("🚀 Train Model dan Evaluasi per Skor"):
-        df = st.session_state.df
-        target_cols = ['math score', 'reading score', 'writing score']
-        feature_cols = ['gender', 'race/ethnicity', 'parental level of education', 'lunch', 'test preparation course']
 
-        # Cek apakah data sudah siap
-        if df[feature_cols].select_dtypes(include='object').shape[1] > 0:
-            st.error("⛔ Gagal training: Masih ada kolom string! Jalankan Label Encoding terlebih dahulu.")
-            st.stop()
 
+# ===== Training & Evaluation untuk Tiap Skor dengan Tombol Terpisah =====
+with st.expander('🧠 Training & Evaluation per Skor (3 Model Terpisah)'):
+    df = st.session_state.df
+    target_cols = ['math score', 'reading score', 'writing score']
+    feature_cols = ['gender', 'race/ethnicity', 'parental level of education', 'lunch', 'test preparation course']
+
+    if df[feature_cols].select_dtypes(include='object').shape[1] > 0:
+        st.error("⛔ Masih ada kolom string! Jalankan Label Encoding dulu.")
+        st.stop()
+
+    # Helper function to run and evaluate a model
+    def run_model(model, model_name):
         for target in target_cols:
-            st.subheader(f"📌 Prediksi: {target.title()}")
+            st.subheader(f"📌 {model_name} – Prediksi {target.title()}")
 
             X = df[feature_cols]
             y = df[target]
 
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-            model = LinearRegression()
             model.fit(X_train, y_train)
             y_pred = model.predict(X_test)
 
@@ -88,5 +91,16 @@ with st.expander('🧠 Training & Evaluation per Skor'):
             ax.scatter(y_test, y_pred, alpha=0.7)
             ax.set_xlabel("Actual Score")
             ax.set_ylabel("Predicted Score")
-            ax.set_title(f"Actual vs Predicted - {target}")
+            ax.set_title(f"{model_name} - Actual vs Predicted ({target})")
             st.pyplot(fig)
+
+    # Tombol-tombol terpisah
+    if st.button("🔘 Train Linear Regression"):
+        run_model(LinearRegression(), "Linear Regression")
+
+    if st.button("🌳 Train Decision Tree"):
+        run_model(DecisionTreeRegressor(random_state=42), "Decision Tree")
+
+    if st.button("🌲 Train Random Forest"):
+        run_model(RandomForestRegressor(n_estimators=100, random_state=42), "Random Forest")
+
