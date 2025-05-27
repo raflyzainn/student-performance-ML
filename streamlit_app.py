@@ -62,6 +62,11 @@ with st.expander('🧹 Pre-Processing Data'):
 with st.expander('🧠 Klasifikasi Grade Siswa'):
     df = st.session_state.df
     X = df[['gender', 'race/ethnicity', 'parental level of education', 'lunch', 'test preparation course']]
+    
+    if 'grade_label' not in df.columns:
+        st.error("⛔ Kolom 'grade_label' belum ada. Harap jalankan Label Encoding + Scaling terlebih dahulu.")
+        st.stop()
+
     y = df['grade_label']
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
