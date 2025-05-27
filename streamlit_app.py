@@ -26,11 +26,29 @@ with st.expander('Data'):
   st.write("🎯 **Target (y)**")
   st.dataframe(y)
 
+with st.expander('🧹 Pre-Processing Data'):
+    st.markdown("Klik tombol berikut untuk melakukan transformasi:")
+
+    # Tombol drop missing values
+    if st.button("🧽 Drop Missing Values"):
+        df.dropna(inplace=True)
+        st.success("✅ Missing values telah dihapus.")
+        st.dataframe(df)
+
+    # Tombol encode kategorikal
+    if st.button("🔠 Encode Kolom Kategorikal"):
+        categorical_cols = ['gender', 'race/ethnicity', 'parental level of education', 'lunch', 'test preparation course']
+        df = pd.get_dummies(df, columns=categorical_cols)
+        st.success("✅ Encoding berhasil dilakukan.")
+        st.dataframe(df)
+
+  
+
 # Melihat visualisasi data
-with st.expander('Data Visualization'):
+with st.expander('📊 Data Visualization'):
   # Menghitung rata-rata per gender
   avg_by_gender = df.groupby("gender")[["average_score"]].mean()
   st.subheader("📊 Rata-rata Skor per Gender")
   st.bar_chart(avg_by_gender)
 
-# Melakukan Pre-Processing
+
