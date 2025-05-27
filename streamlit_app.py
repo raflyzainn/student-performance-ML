@@ -7,18 +7,18 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report, ConfusionMatrixDisplay
-import numpy as np
-from imblearn.over_sampling import SMOTE
 
-st.title(':mortar_board: Klasifikasi Grade Siswa Berdasarkan Skor Rata-rata')
-st.info('📊 Aplikasi ini mengklasifikasikan nilai rata-rata siswa menjadi Grade A–F berdasarkan fitur demografis.')
+st.title(':mortar_board: Klasifikasi Grade Siswa Berdasarkan Skor Rata-rata (A–F)')
+st.info('📊 Aplikasi ini mengklasifikasikan nilai rata-rata siswa menjadi Grade A–F berdasarkan skor rata-rata.')
 
-# ===== Inisialisasi =====
+# ===== Inisialisasi Grade =====
 def GradeCategory(avg):
-    if avg >= 70: return 'High'     # A, B
-    elif avg >= 50: return 'Medium' # C, D
-    else: return 'Low'              # E, F
-
+    if avg >= 90: return 'A'
+    elif avg >= 80: return 'B'
+    elif avg >= 70: return 'C'
+    elif avg >= 60: return 'D'
+    elif avg >= 50: return 'E'
+    else: return 'F'
 
 if 'df' not in st.session_state:
     df = pd.read_csv("StudentsPerformance.csv")
@@ -33,8 +33,6 @@ df = st.session_state.df
 with st.expander('📁 Visualisasi Awal'):
     st.dataframe(df)
 
-from imblearn.over_sampling import SMOTE
-
 # ===== Preprocessing =====
 with st.expander('🧹 Pre-Processing Data'):
     if st.button("🧽 Drop Missing Values"):
@@ -45,35 +43,34 @@ with st.expander('🧹 Pre-Processing Data'):
 
     if st.button("🔠 Label Encoding + Scaling"):
         le = LabelEncoder()
-        df['grade_category'] = df['average_score'].apply(GradeCategory)
-        df['grade_label'] = le.fit_transform(df['grade_category'])  # 0 = Low, 1 = Medium, 2 = High
+        df['grade_label'] = le.fit_transform(df['grade_category'])  # A=0, B=1, C=2, dst.
 
         for col in ['gender', 'lunch', 'test preparation course', 'race/ethnicity', 'parental level of education']:
             if df[col].dtype == 'object':
                 df[col] = le.fit_transform(df[col])
 
-        df_encoded = df.copy()
-        features = ['gender', 'lunch', 'test preparation course', 'race/ethnicity', 'parental level of education']
+        features = ['gender', 'lunch', 'test preparation course', 'race/ethnicity', 'parental level of education',
+                    'math score', 'reading score', 'writing score']
+
         scaler = StandardScaler()
-        df_encoded[features] = scaler.fit_transform(df_encoded[features])
-        st.session_state.df = df_encoded
+        df[features] = scaler.fit_transform(df[features])
 
+        st.session_state.df = df.copy()
         st.success("✅ Label Encoding dan StandardScaler selesai diterapkan.")
-        st.dataframe(df_encoded)
-
-   
+        st.dataframe(df)
 
 # ===== Training & Evaluation Grade (Klasifikasi) =====
 with st.expander('🧠 Klasifikasi Grade Siswa'):
-    df = st.session_state.df
-    X = df[['math score', 'reading score', 'writing score']]
+    df_final = st.session_state.df_smote if 'df_smote' in st.session_state else st.session_state.df
 
-    
-    if 'grade_label' not in df.columns:
-        st.error("⛔ Kolom 'grade_label' belum ada. Harap jalankan Label Encoding + Scaling terlebih dahulu.")
+    X = df_final[['math score', 'reading score', 'writing score',
+                  'gender', 'lunch', 'test preparation course', 'race/ethnicity', 'parental level of education']]
+
+    if 'grade_label' not in df_final.columns:
+        st.error("⛔ Kolom 'grade_label' belum ada. Harap jalankan Label Encoding terlebih dahulu.")
         st.stop()
 
-    y = df['grade_label']
+    y = df_final['grade_label']
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -86,7 +83,7 @@ with st.expander('🧠 Klasifikasi Grade Siswa'):
         st.text("Classification Report:")
         st.text(classification_report(y_test, y_pred))
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(8, 6))
         ConfusionMatrixDisplay.from_estimator(model, X_test, y_test, ax=ax)
         ax.set_title(f"Confusion Matrix - {name}")
         st.pyplot(fig)
