@@ -61,26 +61,7 @@ with st.expander('🧹 Pre-Processing Data'):
         st.success("✅ Label Encoding dan StandardScaler selesai diterapkan.")
         st.dataframe(df_encoded)
 
-    if st.button("⚖️ SMOTE - Atasi Imbalance"):
-        df_encoded = st.session_state.df
-        if 'grade_label' not in df_encoded.columns:
-            st.error("⛔ Kolom 'grade_label' belum ada. Jalankan Label Encoding terlebih dahulu.")
-            st.stop()
-
-        features = ['gender', 'lunch', 'test preparation course', 'race/ethnicity', 'parental level of education']
-        X = df_encoded[features]
-        y = df_encoded['grade_label']
-
-        smote = SMOTE(random_state=42)
-        X_smote, y_smote = smote.fit_resample(X, y)
-
-        df_smote = pd.DataFrame(X_smote, columns=features)
-        df_smote['grade_label'] = y_smote
-
-        st.session_state.df_smote = df_smote
-
-        st.success("✅ SMOTE selesai diterapkan. Data imbalance sudah diatasi.")
-        st.dataframe(df_smote)
+   
 
 # ===== Training & Evaluation Grade (Klasifikasi) =====
 with st.expander('🧠 Klasifikasi Grade Siswa'):
