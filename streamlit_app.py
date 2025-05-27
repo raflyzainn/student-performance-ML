@@ -3,37 +3,27 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import numpy as np
 
-st.title(':mortar_board: Student Performance Classification App')
-st.info('📊 Klasifikasi apakah siswa lulus atau tidak berdasarkan fitur input.')
+st.title(':mortar_board: Prediksi Skor Siswa (Math, Reading, Writing)')
+st.info('📊 Memprediksi skor ujian siswa berdasarkan fitur demografis.')
 
-# ===== Inisialisasi data hanya sekali (saat awal atau refresh) =====
+# ===== Inisialisasi data hanya sekali =====
 if 'df' not in st.session_state:
     df = pd.read_csv("StudentsPerformance.csv")
     df.columns = [str(col).strip() for col in df.columns]
-    df['average_score'] = df[['math score', 'reading score', 'writing score']].mean(axis=1)
-    df['passed'] = df['average_score'].apply(lambda x: 1 if x >= 60 else 0)
     st.session_state.df = df.copy()
 
 df = st.session_state.df
 
-# ===== Data View =====
-with st.expander('📁 Data'):
-    st.write('**Raw Data**')
-    st.dataframe(df)
-
 # ===== Visualisasi =====
-with st.expander('📊 Data Visualization'):
-    if "lunch" in df.columns:
-        st.subheader("🍽️ Persentase Kelulusan Berdasarkan Jenis Lunch")
-        avg_by_lunch = df.groupby("lunch")["passed"].mean()
-        st.bar_chart(avg_by_lunch)
+with st.expander('📊 Visualisasi Awal'):
+    st.dataframe(df.head())
 
 # ===== Preprocessing =====
-with st.expander('🧹 Pre-Processing Data'):
+with st.expander('🧹 Pre-Processing'):
     if st.button("🧽 Drop Missing Values"):
         df.dropna(inplace=True)
         st.session_state.df = df
@@ -51,31 +41,37 @@ with st.expander('🧹 Pre-Processing Data'):
         st.success("✅ Label Encoding selesai.")
         st.dataframe(df)
 
-# ===== Training & Evaluation =====
-with st.expander('🧠 Training & Evaluation'):
-    if st.button("🚀 Train Model dan Evaluasi"):
+# ===== Training & Evaluation per Target =====
+with st.expander('🧠 Training & Evaluation per Skor'):
+    if st.button("🚀 Train dan Evaluasi Model untuk Masing-masing Skor"):
         df = st.session_state.df
-        X = df.drop(columns=['average_score', 'passed'])
-        y = df['passed']
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        feature_cols = ['gender', 'race/ethnicity', 'parental level of education', 'lunch', 'test preparation course']
+        target_cols = ['math score', 'reading score', 'writing score']
 
-        model = LogisticRegression(max_iter=1000)
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
+        for target in target_cols:
+            st.subheader(f"📈 Prediksi: {target.title()}")
 
-        acc = accuracy_score(y_test, y_pred)
-        prec = precision_score(y_test, y_pred)
-        rec = recall_score(y_test, y_pred)
-        f1 = f1_score(y_test, y_pred)
+            X = df[feature_cols]
+            y = df[target]
 
-        st.subheader("📈 Evaluasi Model Klasifikasi")
-        st.write(f"**Accuracy**: `{acc:.2f}`")
-        st.write(f"**Precision**: `{prec:.2f}`")
-        st.write(f"**Recall**: `{rec:.2f}`")
-        st.write(f"**F1 Score**: `{f1:.2f}`")
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        st.subheader("📊 Confusion Matrix")
-        fig, ax = plt.subplots()
-        ConfusionMatrixDisplay.from_predictions(y_test, y_pred, ax=ax)
-        st.pyplot(fig)
+            model = LinearRegression()
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+
+            mae = mean_absolute_error(y_test, y_pred)
+            rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+            r2 = r2_score(y_test, y_pred)
+
+            st.write(f"**MAE**: {mae:.2f}")
+            st.write(f"**RMSE**: {rmse:.2f}")
+            st.write(f"**R² Score**: {r2:.2f}")
+
+            fig, ax = plt.subplots()
+            ax.scatter(y_test, y_pred, alpha=0.6)
+            ax.set_xlabel("Actual")
+            ax.set_ylabel("Predicted")
+            ax.set_title(f"{target.title()} - Actual vs Predicted")
+            st.pyplot(fig)
