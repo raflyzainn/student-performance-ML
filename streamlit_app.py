@@ -32,7 +32,20 @@ df = st.session_state.df
 
 # ===== Visualisasi Awal =====
 with st.expander('📁 Data'):
+    st.subheader("🗃️ Tabel Data Siswa")
     st.dataframe(df)
+
+    st.subheader("📑 Informasi Umum Dataset")
+    buffer = []
+    df.info(buf=buffer)
+    s = "\n".join(buffer)
+    st.text(s)
+
+    st.subheader("📊 Statistik Deskriptif")
+    st.dataframe(df.describe())
+
+    st.subheader("🔢 Jumlah Data Tiap Grade")
+    st.dataframe(df['grade_category'].value_counts())
 
 # ===== Visualisasi Data =====
 with st.expander('📊 Data Visualization'):
