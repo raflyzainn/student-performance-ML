@@ -27,18 +27,6 @@ with st.expander('Data'):
   st.write("🎯 **Target (y)**")
   st.dataframe(y)
 
-  # Visualisasi: Bar Chart
-  st.subheader("🍽️ Rata-Rata Skor Berdasarkan Jenis Lunch")
-  avg_by_lunch = df.groupby("lunch")[["average_score"]].mean()
-  
-  # Plot
-  fig, ax = plt.subplots()
-  avg_by_lunch.plot(kind='bar', ax=ax, color=['#1E90FF'])  # biru
-  ax.set_ylabel("Average Score")
-  ax.set_xlabel("Lunch Type")
-  ax.set_title("Rata-Rata Skor per Lunch Type")
-  st.pyplot(fig)
-
 # Melihat visualisasi data
 with st.expander('📊 Data Visualization'):
   # Menghitung rata-rata per gender
