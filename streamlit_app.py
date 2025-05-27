@@ -23,7 +23,7 @@ if 'df' not in st.session_state:
     df = pd.read_csv("StudentsPerformance.csv")
     df.columns = [str(col).strip() for col in df.columns]
     df['average_score'] = df[['math score', 'reading score', 'writing score']].mean(axis=1)
-    df['grade'] = df['average_score'].apply(Grade)
+    df['grade_category'] = df['average_score'].apply(GradeCategory)
     st.session_state.df = df.copy()
 
 df = st.session_state.df
