@@ -7,6 +7,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report, ConfusionMatrixDisplay
+import seaborn as sns
 
 st.title(':mortar_board: Klasifikasi Grade Siswa Berdasarkan Skor Rata-rata (A–F)')
 st.info('📊 Aplikasi ini mengklasifikasikan nilai rata-rata siswa menjadi Grade A–F berdasarkan skor rata-rata.')
@@ -30,9 +31,35 @@ if 'df' not in st.session_state:
 df = st.session_state.df
 
 # ===== Visualisasi Awal =====
-with st.expander('📁 Visualisasi Awal'):
+with st.expander('📁 Data'):
     st.dataframe(df)
 
+# ===== Visualisasi Data =====
+with st.expander('📊 Data Visualization'):
+    st.subheader("📈 Distribusi Nilai Rata-rata Siswa")
+    fig, ax = plt.subplots(figsize=(10, 5))
+    sns.histplot(df['average_score'], bins=20, kde=True, color='skyblue', ax=ax)
+    ax.set_xlabel('Average Score')
+    ax.set_ylabel('Jumlah Siswa')
+    ax.set_title('Histogram Nilai Rata-rata')
+    st.pyplot(fig)
+
+    st.subheader("📌 Korelasi Antar Fitur")
+    numeric_features = ['math score', 'reading score', 'writing score', 'average_score']
+    corr = df[numeric_features].corr()
+    fig_corr, ax_corr = plt.subplots(figsize=(8, 6))
+    sns.heatmap(corr, annot=True, cmap='coolwarm', ax=ax_corr)
+    ax_corr.set_title('Heatmap Korelasi')
+    st.pyplot(fig_corr)
+
+    st.subheader("🎯 Distribusi Grade Siswa")
+    fig_grade, ax_grade = plt.subplots(figsize=(8, 4))
+    sns.countplot(x='grade_category', data=df, order=['A', 'B', 'C', 'D', 'E', 'F'], palette='viridis', ax=ax_grade)
+    ax_grade.set_xlabel('Grade')
+    ax_grade.set_ylabel('Jumlah Siswa')
+    ax_grade.set_title('Distribusi Grade Siswa')
+    st.pyplot(fig_grade)
+    
 # ===== Preprocessing =====
 with st.expander('🧹 Pre-Processing Data'):
     if st.button("🧽 Drop Missing Values"):
