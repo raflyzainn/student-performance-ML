@@ -1,9 +1,6 @@
-# 📦 Streamlit App Starter Kit 
-```
-⬆️ (Replace above with your app's name)
-```
+# 	:mortar_board: Student Performance in Exams by Machine Learning
 
-Description of the app ...
+This is a application for the student performance in exams by Machine Learning
 
 ## Demo App
 
