@@ -66,8 +66,7 @@ with st.expander('🧹 Pre-Processing Data'):
 # ===== Training & Evaluation Grade (Klasifikasi) =====
 with st.expander('🧠 Klasifikasi Grade Siswa'):
     df = st.session_state.df
-    X = df[['gender', 'race/ethnicity', 'parental level of education', 'lunch', 
-        'test preparation course', 'math score', 'reading score', 'writing score']]
+    X = df[['math score', 'reading score', 'writing score']]
 
     
     if 'grade_label' not in df.columns:
