@@ -21,7 +21,7 @@ df = st.session_state.df
 # ===== Visualisasi Awal =====
 with st.expander('📁 Visualisasi Awal'):
     st.write("Contoh data:")
-    st.dataframe(df.head())
+    st.dataframe(df)
 
 # ===== Preprocessing =====
 with st.expander('🧹 Pre-Processing Data'):
