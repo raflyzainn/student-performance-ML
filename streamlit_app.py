@@ -3,9 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score, classification_report, ConfusionMatrixDisplay
 import numpy as np
 
@@ -17,7 +15,6 @@ def GradeCategory(avg):
     if avg >= 70: return 'High'     # A, B
     elif avg >= 50: return 'Medium' # C, D
     else: return 'Low'              # E, F
-
 
 if 'df' not in st.session_state:
     df = pd.read_csv("StudentsPerformance.csv")
@@ -43,7 +40,6 @@ with st.expander('🧹 Pre-Processing Data'):
     if st.button("🔠 Label Encoding + Scaling"):
         le = LabelEncoder()
         df['grade_category'] = df['average_score'].apply(GradeCategory)
-        le = LabelEncoder()
         df['grade_label'] = le.fit_transform(df['grade_category'])  # 0 = Low, 1 = Medium, 2 = High
 
         for col in ['gender', 'lunch', 'test preparation course', 'race/ethnicity', 'parental level of education']:
@@ -60,10 +56,10 @@ with st.expander('🧹 Pre-Processing Data'):
         st.dataframe(df_encoded)
 
 # ===== Training & Evaluation Grade (Klasifikasi) =====
-with st.expander('🧠 Klasifikasi Grade Siswa'):
+with st.expander('🧠 Klasifikasi Grade Siswa dengan XGBoost'):
     df = st.session_state.df
     X = df[['gender', 'race/ethnicity', 'parental level of education', 'lunch', 'test preparation course']]
-    
+
     if 'grade_label' not in df.columns:
         st.error("⛔ Kolom 'grade_label' belum ada. Harap jalankan Label Encoding + Scaling terlebih dahulu.")
         st.stop()
@@ -72,25 +68,17 @@ with st.expander('🧠 Klasifikasi Grade Siswa'):
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    def run_classification(model, name):
+    if st.button("🚀 Train XGBoost"):
+        model = XGBClassifier(use_label_encoder=False, eval_metric='mlogloss', random_state=42)
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        st.subheader(f"📌 {name} - Evaluasi")
+        st.subheader(f"📌 XGBoost - Evaluasi")
         st.write(f"**Accuracy:** {accuracy_score(y_test, y_pred):.2f}")
         st.text("Classification Report:")
         st.text(classification_report(y_test, y_pred))
 
         fig, ax = plt.subplots()
         ConfusionMatrixDisplay.from_estimator(model, X_test, y_test, ax=ax)
-        ax.set_title(f"Confusion Matrix - {name}")
+        ax.set_title(f"Confusion Matrix - XGBoost")
         st.pyplot(fig)
-
-    if st.button("🔘 Train Logistic Regression"):
-        run_classification(LogisticRegression(max_iter=1000), "Logistic Regression")
-
-    if st.button("🌳 Train Decision Tree"):
-        run_classification(DecisionTreeClassifier(random_state=42), "Decision Tree")
-
-    if st.button("🌲 Train Random Forest"):
-        run_classification(RandomForestClassifier(n_estimators=100, random_state=42), "Random Forest")
