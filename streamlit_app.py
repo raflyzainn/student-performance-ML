@@ -8,6 +8,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report, ConfusionMatrixDisplay
 import numpy as np
+from imblearn.over_sampling import SMOTE
 
 st.title(':mortar_board: Klasifikasi Grade Siswa Berdasarkan Skor Rata-rata')
 st.info('📊 Aplikasi ini mengklasifikasikan nilai rata-rata siswa menjadi Grade A–F berdasarkan fitur demografis.')
