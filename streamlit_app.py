@@ -13,13 +13,11 @@ st.title(':mortar_board: Klasifikasi Grade Siswa Berdasarkan Skor Rata-rata')
 st.info('📊 Aplikasi ini mengklasifikasikan nilai rata-rata siswa menjadi Grade A–F berdasarkan fitur demografis.')
 
 # ===== Inisialisasi =====
-def Grade(avg):
-    if avg >= 80: return 'A'
-    elif avg >= 70: return 'B'
-    elif avg >= 60: return 'C'
-    elif avg >= 50: return 'D'
-    elif avg >= 40: return 'E'
-    else: return 'F'
+def GradeCategory(avg):
+    if avg >= 70: return 'High'     # A, B
+    elif avg >= 50: return 'Medium' # C, D
+    else: return 'Low'              # E, F
+
 
 if 'df' not in st.session_state:
     df = pd.read_csv("StudentsPerformance.csv")
@@ -44,7 +42,10 @@ with st.expander('🧹 Pre-Processing Data'):
 
     if st.button("🔠 Label Encoding + Scaling"):
         le = LabelEncoder()
-        df['grade_label'] = le.fit_transform(df['grade'])
+        df['grade_category'] = df['average_score'].apply(GradeCategory)
+        le = LabelEncoder()
+        df['grade_label'] = le.fit_transform(df['grade_category'])  # 0 = Low, 1 = Medium, 2 = High
+
         for col in ['gender', 'lunch', 'test preparation course', 'race/ethnicity', 'parental level of education']:
             if df[col].dtype == 'object':
                 df[col] = le.fit_transform(df[col])
