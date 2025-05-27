@@ -3,19 +3,29 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report, ConfusionMatrixDisplay
 import numpy as np
 
-st.title(':mortar_board: Prediksi Skor Siswa (Math, Reading, Writing)')
-st.info('📊 Aplikasi ini memprediksi skor siswa berdasarkan fitur demografis.')
+st.title(':mortar_board: Klasifikasi Grade Siswa Berdasarkan Skor Rata-rata')
+st.info('📊 Aplikasi ini mengklasifikasikan nilai rata-rata siswa menjadi Grade A–F berdasarkan fitur demografis.')
 
 # ===== Inisialisasi =====
+def Grade(avg):
+    if avg >= 80: return 'A'
+    elif avg >= 70: return 'B'
+    elif avg >= 60: return 'C'
+    elif avg >= 50: return 'D'
+    elif avg >= 40: return 'E'
+    else: return 'F'
+
 if 'df' not in st.session_state:
     df = pd.read_csv("StudentsPerformance.csv")
     df.columns = [str(col).strip() for col in df.columns]
+    df['average_score'] = df[['math score', 'reading score', 'writing score']].mean(axis=1)
+    df['grade'] = df['average_score'].apply(Grade)
     st.session_state.df = df.copy()
 
 df = st.session_state.df
@@ -34,73 +44,47 @@ with st.expander('🧹 Pre-Processing Data'):
 
     if st.button("🔠 Label Encoding + Scaling"):
         le = LabelEncoder()
-
-        # Label Encoding
+        df['grade_label'] = le.fit_transform(df['grade'])
         for col in ['gender', 'lunch', 'test preparation course', 'race/ethnicity', 'parental level of education']:
             if df[col].dtype == 'object':
                 df[col] = le.fit_transform(df[col])
 
-        # Simpan versi encoded
         df_encoded = df.copy()
-
-        # Tentukan fitur yang akan diskalakan (hanya fitur, exclude target/score)
         features = ['gender', 'lunch', 'test preparation course', 'race/ethnicity', 'parental level of education']
         scaler = StandardScaler()
         df_encoded[features] = scaler.fit_transform(df_encoded[features])
-
-        # Simpan ke session_state
         st.session_state.df = df_encoded
 
         st.success("✅ Label Encoding dan StandardScaler selesai diterapkan.")
         st.dataframe(df_encoded)
 
-
-
-# ===== Training & Evaluation untuk Tiap Skor dengan Tombol Terpisah =====
-with st.expander('🧠 Training & Evaluation per Skor (3 Model Terpisah)'):
+# ===== Training & Evaluation Grade (Klasifikasi) =====
+with st.expander('🧠 Klasifikasi Grade Siswa'):
     df = st.session_state.df
-    target_cols = ['math score', 'reading score', 'writing score']
-    feature_cols = ['gender', 'race/ethnicity', 'parental level of education', 'lunch', 'test preparation course']
+    X = df[['gender', 'race/ethnicity', 'parental level of education', 'lunch', 'test preparation course']]
+    y = df['grade_label']
 
-    if df[feature_cols].select_dtypes(include='object').shape[1] > 0:
-        st.error("⛔ Masih ada kolom string! Jalankan Label Encoding dulu.")
-        st.stop()
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Helper function to run and evaluate a model
-    def run_model(model, model_name):
-        for target in target_cols:
-            st.subheader(f"📌 {model_name} – Prediksi {target.title()}")
+    def run_classification(model, name):
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
 
-            X = df[feature_cols]
-            y = df[target]
+        st.subheader(f"📌 {name} - Evaluasi")
+        st.write(f"**Accuracy:** {accuracy_score(y_test, y_pred):.2f}")
+        st.text("Classification Report:")
+        st.text(classification_report(y_test, y_pred))
 
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        fig, ax = plt.subplots()
+        ConfusionMatrixDisplay.from_estimator(model, X_test, y_test, ax=ax)
+        ax.set_title(f"Confusion Matrix - {name}")
+        st.pyplot(fig)
 
-            model.fit(X_train, y_train)
-            y_pred = model.predict(X_test)
-
-            mae = mean_absolute_error(y_test, y_pred)
-            rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-            r2 = r2_score(y_test, y_pred)
-
-            st.write(f"**MAE**: {mae:.2f}")
-            st.write(f"**RMSE**: {rmse:.2f}")
-            st.write(f"**R² Score**: {r2:.2f}")
-
-            fig, ax = plt.subplots()
-            ax.scatter(y_test, y_pred, alpha=0.7)
-            ax.set_xlabel("Actual Score")
-            ax.set_ylabel("Predicted Score")
-            ax.set_title(f"{model_name} - Actual vs Predicted ({target})")
-            st.pyplot(fig)
-
-    # Tombol-tombol terpisah
-    if st.button("🔘 Train Linear Regression"):
-        run_model(LinearRegression(), "Linear Regression")
+    if st.button("🔘 Train Logistic Regression"):
+        run_classification(LogisticRegression(max_iter=1000), "Logistic Regression")
 
     if st.button("🌳 Train Decision Tree"):
-        run_model(DecisionTreeRegressor(random_state=42), "Decision Tree")
+        run_classification(DecisionTreeClassifier(random_state=42), "Decision Tree")
 
     if st.button("🌲 Train Random Forest"):
-        run_model(RandomForestRegressor(n_estimators=100, random_state=42), "Random Forest")
-
+        run_classification(RandomForestClassifier(n_estimators=100, random_state=42), "Random Forest")
