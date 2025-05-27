@@ -28,4 +28,4 @@ with st.expander('Data'):
   # Menghitung rata-rata per gender
   avg_by_gender = df.groupby("gender")[["average_score"]].mean()
   st.subheader("📊 Rata-rata Skor per Gender")
-  st.bar_chart(avg_by_gender)
+  st.area_chart(avg_by_gender)
