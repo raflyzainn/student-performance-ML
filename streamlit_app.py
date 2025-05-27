@@ -26,6 +26,14 @@ with st.expander('Data'):
   st.write("🎯 **Target (y)**")
   st.dataframe(y)
 
+# Melihat visualisasi data
+with st.expander('📊 Data Visualization'):
+  # Menghitung rata-rata per gender
+  avg_by_gender = df.groupby("gender")[["average_score"]].mean()
+  st.subheader("📊 Rata-rata Skor per Gender")
+  st.bar_chart(avg_by_gender)
+
+
 with st.expander('🧹 Pre-Processing Data'):
     st.markdown("Klik tombol berikut untuk melakukan transformasi:")
 
@@ -44,11 +52,5 @@ with st.expander('🧹 Pre-Processing Data'):
 
   
 
-# Melihat visualisasi data
-with st.expander('📊 Data Visualization'):
-  # Menghitung rata-rata per gender
-  avg_by_gender = df.groupby("gender")[["average_score"]].mean()
-  st.subheader("📊 Rata-rata Skor per Gender")
-  st.bar_chart(avg_by_gender)
 
 
