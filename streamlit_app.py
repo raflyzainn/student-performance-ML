@@ -8,6 +8,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report, ConfusionMatrixDisplay
 import seaborn as sns
+from io import StringIO
 
 st.title(':mortar_board: Klasifikasi Grade Siswa Berdasarkan Skor Rata-rata (A–F)')
 st.info('📊 Aplikasi ini mengklasifikasikan nilai rata-rata siswa menjadi Grade A–F berdasarkan skor rata-rata.')
@@ -36,16 +37,17 @@ with st.expander('📁 Data'):
     st.dataframe(df)
 
     st.subheader("📑 Informasi Umum Dataset")
-    buffer = []
+    buffer = StringIO()
     df.info(buf=buffer)
-    s = "\n".join(buffer)
-    st.text(s)
+    info_str = buffer.getvalue()
+    st.text(info_str)
 
     st.subheader("📊 Statistik Deskriptif")
     st.dataframe(df.describe())
 
     st.subheader("🔢 Jumlah Data Tiap Grade")
     st.dataframe(df['grade_category'].value_counts())
+
 
 # ===== Visualisasi Data =====
 with st.expander('📊 Data Visualization'):
