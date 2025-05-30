@@ -105,7 +105,6 @@ with st.expander('🧹 Pre-Processing Data'):
 
 # ===== Model Manual =====
 def custom_logistic_regression(X_train, y_train, X_test):
-    # One-vs-Rest untuk multi-kelas
     classes = np.unique(y_train)
     X_train = np.insert(X_train.values, 0, 1, axis=1)
     X_test = np.insert(X_test.values, 0, 1, axis=1)
@@ -135,12 +134,7 @@ def custom_logistic_regression(X_train, y_train, X_test):
         preds.append(pred_class)
     return np.array(preds)
 
-def custom_majority_classifier(X_train, y_train, X_test):
-    from collections import Counter
-    most_common = Counter(y_train).most_common(1)[0][0]
-    return np.full(len(X_test), most_common)
-
-def custom_knn(X_train, y_train, X_test, k=3):
+def custom_knn(X_train, y_train, X_test, k=5):
     from scipy.spatial.distance import cdist
     distances = cdist(X_test, X_train, 'euclidean')
     neighbors = np.argsort(distances, axis=1)[:, :k]
@@ -149,6 +143,29 @@ def custom_knn(X_train, y_train, X_test, k=3):
         votes = y_train.iloc[n]
         preds.append(np.bincount(votes).argmax())
     return np.array(preds)
+
+def custom_naive_bayes(X_train, y_train, X_test):
+    classes = np.unique(y_train)
+    summaries = {}
+    for cls in classes:
+        features = X_train[y_train == cls]
+        summaries[cls] = [(np.mean(col), np.std(col)) for col in features.T]
+
+    def calculate_probability(x, mean, stdev):
+        exponent = np.exp(-((x - mean) ** 2 / (2 * stdev ** 2)))
+        return (1 / (np.sqrt(2 * np.pi) * stdev)) * exponent
+
+    def predict_single(x):
+        probabilities = {}
+        for cls, stats in summaries.items():
+            prob = 1
+            for i in range(len(stats)):
+                mean, stdev = stats[i]
+                prob *= calculate_probability(x[i], mean, stdev)
+            probabilities[cls] = prob
+        return max(probabilities, key=probabilities.get)
+
+    return np.array([predict_single(x) for x in X_test])
 
 # ===== Training & Evaluation Grade (Klasifikasi) =====
 with st.expander('🧠 Klasifikasi Grade Siswa'):
@@ -194,13 +211,13 @@ with st.expander('🧠 Klasifikasi Grade Siswa'):
         y_pred = custom_logistic_regression(X_train, y_train, X_test)
         evaluate_model(y_test, y_pred, "Custom Logistic Regression")
 
-    if st.button("📎 Train Majority Classifier"):
-        y_pred = custom_majority_classifier(X_train, y_train, X_test)
-        evaluate_model(y_test, y_pred, "Majority Classifier")
-
     if st.button("📌 Train K-NN (Manual)"):
         y_pred = custom_knn(X_train.to_numpy(), y_train, X_test.to_numpy(), k=5)
         evaluate_model(y_test, y_pred, "Custom K-NN")
+
+    if st.button("🧠 Train Naive Bayes"):
+        y_pred = custom_naive_bayes(X_train.to_numpy(), y_train.to_numpy(), X_test.to_numpy())
+        evaluate_model(y_test, y_pred, "Custom Naive Bayes")
 
 # ===== Tab Evaluasi Model =====
 with st.expander("📊 Evaluasi Model - Komparasi"):
