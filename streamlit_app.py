@@ -3,13 +3,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from io import StringIO
+import numpy as np
 
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report, ConfusionMatrixDisplay, f1_score, precision_score, recall_score
+from sklearn.metrics import confusion_matrix, classification_report, f1_score, precision_score, recall_score, accuracy_score
 
 # ====== Inisialisasi Aplikasi ======
 st.title(':mortar_board: Klasifikasi Grade Siswa Berdasarkan Skor Rata-rata (A–F)')
@@ -105,6 +103,41 @@ with st.expander('🧹 Pre-Processing Data'):
         st.success("✅ Label Encoding dan StandardScaler selesai diterapkan.")
         st.dataframe(df)
 
+# ===== Model Manual =====
+def custom_logistic_regression(X_train, y_train, X_test):
+    from math import exp
+    X_train = np.insert(X_train.values, 0, 1, axis=1)
+    X_test = np.insert(X_test.values, 0, 1, axis=1)
+    y_train = y_train.values.reshape(-1, 1)
+    weights = np.zeros((X_train.shape[1], 1))
+    lr = 0.01
+    epochs = 500
+
+    for _ in range(epochs):
+        z = np.dot(X_train, weights)
+        pred = 1 / (1 + np.exp(-z))
+        gradient = np.dot(X_train.T, (pred - y_train)) / len(y_train)
+        weights -= lr * gradient
+
+    z_test = np.dot(X_test, weights)
+    y_pred = (1 / (1 + np.exp(-z_test))) >= 0.5
+    return y_pred.astype(int).flatten()
+
+def custom_majority_classifier(X_train, y_train, X_test):
+    from collections import Counter
+    most_common = Counter(y_train).most_common(1)[0][0]
+    return np.full(len(X_test), most_common)
+
+def custom_knn(X_train, y_train, X_test, k=3):
+    from scipy.spatial.distance import cdist
+    distances = cdist(X_test, X_train, 'euclidean')
+    neighbors = np.argsort(distances, axis=1)[:, :k]
+    preds = []
+    for n in neighbors:
+        votes = y_train.iloc[n]
+        preds.append(np.bincount(votes).argmax())
+    return np.array(preds)
+
 # ===== Training & Evaluation Grade (Klasifikasi) =====
 with st.expander('🧠 Klasifikasi Grade Siswa'):
     df_final = st.session_state.df
@@ -118,14 +151,11 @@ with st.expander('🧠 Klasifikasi Grade Siswa'):
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    def run_classification(model, name):
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
-
+    def evaluate_model(y_test, y_pred, name):
         acc = accuracy_score(y_test, y_pred)
-        prec = precision_score(y_test, y_pred, average='macro')
-        rec = recall_score(y_test, y_pred, average='macro')
-        f1 = f1_score(y_test, y_pred, average='macro')
+        prec = precision_score(y_test, y_pred, average='macro', zero_division=0)
+        rec = recall_score(y_test, y_pred, average='macro', zero_division=0)
+        f1 = f1_score(y_test, y_pred, average='macro', zero_division=0)
 
         st.subheader(f"📌 {name} - Evaluasi")
         st.write(f"**Accuracy:** {acc:.2f}")
@@ -133,10 +163,11 @@ with st.expander('🧠 Klasifikasi Grade Siswa'):
         st.write(f"**Macro Recall:** {rec:.2f}")
         st.write(f"**Macro F1-Score:** {f1:.2f}")
         st.text("Classification Report:")
-        st.text(classification_report(y_test, y_pred))
+        st.text(classification_report(y_test, y_pred, zero_division=0))
 
-        fig, ax = plt.subplots(figsize=(8, 6))
-        ConfusionMatrixDisplay.from_estimator(model, X_test, y_test, ax=ax)
+        cm = confusion_matrix(y_test, y_pred)
+        fig, ax = plt.subplots()
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
         ax.set_title(f"Confusion Matrix - {name}")
         st.pyplot(fig)
 
@@ -147,30 +178,17 @@ with st.expander('🧠 Klasifikasi Grade Siswa'):
             'F1-Score': f1
         }
 
-    # Logistic Regression
-    st.subheader("⚙️ Logistic Regression")
-    c_val = st.slider("Nilai C (Regularization strength)", 0.01, 10.0, 1.0)
-    solver_opt = st.selectbox("Solver", ["lbfgs", "liblinear", "sag", "saga"])
-    if st.button("🔘 Train Logistic Regression"):
-        model = LogisticRegression(C=c_val, solver=solver_opt, max_iter=1000)
-        run_classification(model, "Logistic Regression")
+    if st.button("🔘 Train Custom Logistic Regression"):
+        y_pred = custom_logistic_regression(X_train, y_train, X_test)
+        evaluate_model(y_test, y_pred, "Custom Logistic Regression")
 
-    # Decision Tree
-    st.subheader("🌳 Decision Tree")
-    max_depth_dt = st.slider("Max Depth", 1, 20, 5)
-    criterion_dt = st.selectbox("Criterion", ["gini", "entropy"])
-    if st.button("Train Decision Tree"):
-        model = DecisionTreeClassifier(max_depth=max_depth_dt, criterion=criterion_dt, random_state=42)
-        run_classification(model, "Decision Tree")
+    if st.button("📎 Train Majority Classifier"):
+        y_pred = custom_majority_classifier(X_train, y_train, X_test)
+        evaluate_model(y_test, y_pred, "Majority Classifier")
 
-    # Random Forest
-    st.subheader("🌲 Random Forest")
-    n_estimators_rf = st.slider("Jumlah Trees", 10, 300, 100, step=10)
-    max_depth_rf = st.slider("Max Depth", 1, 30, 10)
-    criterion_rf = st.selectbox("Criterion RF", ["gini", "entropy"])
-    if st.button("Train Random Forest"):
-        model = RandomForestClassifier(n_estimators=n_estimators_rf, max_depth=max_depth_rf, criterion=criterion_rf, random_state=42)
-        run_classification(model, "Random Forest")
+    if st.button("📌 Train K-NN (Manual)"):
+        y_pred = custom_knn(X_train.to_numpy(), y_train, X_test.to_numpy(), k=5)
+        evaluate_model(y_test, y_pred, "Custom K-NN")
 
 # ===== Tab Evaluasi Model =====
 with st.expander("📊 Evaluasi Model - Komparasi"):
