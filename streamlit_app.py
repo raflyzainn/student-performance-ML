@@ -1,17 +1,22 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
+from io import StringIO
+
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report, ConfusionMatrixDisplay
-import seaborn as sns
-from io import StringIO
+from sklearn.metrics import accuracy_score, classification_report, ConfusionMatrixDisplay, f1_score, precision_score, recall_score
 
+# ====== Inisialisasi Aplikasi ======
 st.title(':mortar_board: Klasifikasi Grade Siswa Berdasarkan Skor Rata-rata (A–F)')
 st.info('📊 Aplikasi ini mengklasifikasikan nilai rata-rata siswa menjadi Grade A–F berdasarkan skor rata-rata.')
+
+if 'model_results' not in st.session_state:
+    st.session_state.model_results = {}
 
 # ===== Inisialisasi Grade =====
 def GradeCategory(avg):
@@ -48,7 +53,6 @@ with st.expander('📁 Data'):
     st.subheader("🔢 Jumlah Data Tiap Grade")
     st.dataframe(df['grade_category'].value_counts())
 
-
 # ===== Visualisasi Data =====
 with st.expander('📊 Data Visualization'):
     st.subheader("📈 Distribusi Nilai Rata-rata Siswa")
@@ -74,7 +78,7 @@ with st.expander('📊 Data Visualization'):
     ax_grade.set_ylabel('Jumlah Siswa')
     ax_grade.set_title('Distribusi Grade Siswa')
     st.pyplot(fig_grade)
-    
+
 # ===== Preprocessing =====
 with st.expander('🧹 Pre-Processing Data'):
     if st.button("🧽 Drop Missing Values"):
@@ -85,7 +89,7 @@ with st.expander('🧹 Pre-Processing Data'):
 
     if st.button("🔠 Label Encoding + Scaling"):
         le = LabelEncoder()
-        df['grade_label'] = le.fit_transform(df['grade_category'])  # A=0, B=1, C=2, dst.
+        df['grade_label'] = le.fit_transform(df['grade_category'])
 
         for col in ['gender', 'lunch', 'test preparation course', 'race/ethnicity', 'parental level of education']:
             if df[col].dtype == 'object':
@@ -103,15 +107,13 @@ with st.expander('🧹 Pre-Processing Data'):
 
 # ===== Training & Evaluation Grade (Klasifikasi) =====
 with st.expander('🧠 Klasifikasi Grade Siswa'):
-    df_final = st.session_state.df_smote if 'df_smote' in st.session_state else st.session_state.df
-
-    X = df_final[['math score', 'reading score', 'writing score',
-                  'gender', 'lunch', 'test preparation course', 'race/ethnicity', 'parental level of education']]
-
+    df_final = st.session_state.df
     if 'grade_label' not in df_final.columns:
         st.error("⛔ Kolom 'grade_label' belum ada. Harap jalankan Label Encoding terlebih dahulu.")
         st.stop()
 
+    X = df_final[['math score', 'reading score', 'writing score',
+                  'gender', 'lunch', 'test preparation course', 'race/ethnicity', 'parental level of education']]
     y = df_final['grade_label']
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -120,8 +122,16 @@ with st.expander('🧠 Klasifikasi Grade Siswa'):
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
+        acc = accuracy_score(y_test, y_pred)
+        prec = precision_score(y_test, y_pred, average='macro')
+        rec = recall_score(y_test, y_pred, average='macro')
+        f1 = f1_score(y_test, y_pred, average='macro')
+
         st.subheader(f"📌 {name} - Evaluasi")
-        st.write(f"**Accuracy:** {accuracy_score(y_test, y_pred):.2f}")
+        st.write(f"**Accuracy:** {acc:.2f}")
+        st.write(f"**Macro Precision:** {prec:.2f}")
+        st.write(f"**Macro Recall:** {rec:.2f}")
+        st.write(f"**Macro F1-Score:** {f1:.2f}")
         st.text("Classification Report:")
         st.text(classification_report(y_test, y_pred))
 
@@ -130,34 +140,52 @@ with st.expander('🧠 Klasifikasi Grade Siswa'):
         ax.set_title(f"Confusion Matrix - {name}")
         st.pyplot(fig)
 
+        st.session_state.model_results[name] = {
+            'Accuracy': acc,
+            'Precision': prec,
+            'Recall': rec,
+            'F1-Score': f1
+        }
+
+    # Logistic Regression
     st.subheader("⚙️ Logistic Regression")
     c_val = st.slider("Nilai C (Regularization strength)", 0.01, 10.0, 1.0)
     solver_opt = st.selectbox("Solver", ["lbfgs", "liblinear", "sag", "saga"])
-    
     if st.button("🔘 Train Logistic Regression"):
         model = LogisticRegression(C=c_val, solver=solver_opt, max_iter=1000)
         run_classification(model, "Logistic Regression")
 
+    # Decision Tree
     st.subheader("🌳 Decision Tree")
     max_depth_dt = st.slider("Max Depth", 1, 20, 5)
     criterion_dt = st.selectbox("Criterion", ["gini", "entropy"])
-    
     if st.button("Train Decision Tree"):
         model = DecisionTreeClassifier(max_depth=max_depth_dt, criterion=criterion_dt, random_state=42)
         run_classification(model, "Decision Tree")
 
-
+    # Random Forest
     st.subheader("🌲 Random Forest")
     n_estimators_rf = st.slider("Jumlah Trees", 10, 300, 100, step=10)
     max_depth_rf = st.slider("Max Depth", 1, 30, 10)
     criterion_rf = st.selectbox("Criterion RF", ["gini", "entropy"])
-    
     if st.button("Train Random Forest"):
-        model = RandomForestClassifier(
-            n_estimators=n_estimators_rf,
-            max_depth=max_depth_rf,
-            criterion=criterion_rf,
-            random_state=42
-        )
+        model = RandomForestClassifier(n_estimators=n_estimators_rf, max_depth=max_depth_rf, criterion=criterion_rf, random_state=42)
         run_classification(model, "Random Forest")
 
+# ===== Tab Evaluasi Model =====
+with st.expander("📊 Evaluasi Model - Komparasi"):
+    if st.session_state.model_results:
+        results_df = pd.DataFrame(st.session_state.model_results).T
+        st.subheader("📈 Tabel Perbandingan Model")
+        st.dataframe(results_df.style.highlight_max(axis=0))
+
+        st.subheader("📉 Grafik Perbandingan Metrik Model")
+        metric = st.selectbox("Pilih metrik untuk visualisasi", ['Accuracy', 'Precision', 'Recall', 'F1-Score'])
+
+        fig, ax = plt.subplots()
+        results_df[metric].plot(kind='bar', color='skyblue', ax=ax)
+        ax.set_ylabel(metric)
+        ax.set_title(f'Perbandingan {metric} antar Model')
+        st.pyplot(fig)
+    else:
+        st.warning("❗ Belum ada model yang dilatih. Silakan jalankan minimal 1 model dulu.")
