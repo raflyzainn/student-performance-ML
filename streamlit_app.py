@@ -130,11 +130,34 @@ with st.expander('🧠 Klasifikasi Grade Siswa'):
         ax.set_title(f"Confusion Matrix - {name}")
         st.pyplot(fig)
 
+    st.subheader("⚙️ Logistic Regression")
+    c_val = st.slider("Nilai C (Regularization strength)", 0.01, 10.0, 1.0)
+    solver_opt = st.selectbox("Solver", ["lbfgs", "liblinear", "sag", "saga"])
+    
     if st.button("🔘 Train Logistic Regression"):
-        run_classification(LogisticRegression(max_iter=1000), "Logistic Regression")
+        model = LogisticRegression(C=c_val, solver=solver_opt, max_iter=1000)
+        run_classification(model, "Logistic Regression")
 
-    if st.button("🌳 Train Decision Tree"):
-        run_classification(DecisionTreeClassifier(random_state=42), "Decision Tree")
+    st.subheader("🌳 Decision Tree")
+    max_depth_dt = st.slider("Max Depth", 1, 20, 5)
+    criterion_dt = st.selectbox("Criterion", ["gini", "entropy"])
+    
+    if st.button("Train Decision Tree"):
+        model = DecisionTreeClassifier(max_depth=max_depth_dt, criterion=criterion_dt, random_state=42)
+        run_classification(model, "Decision Tree")
 
-    if st.button("🌲 Train Random Forest"):
-        run_classification(RandomForestClassifier(n_estimators=100, random_state=42), "Random Forest")
+
+    st.subheader("🌲 Random Forest")
+    n_estimators_rf = st.slider("Jumlah Trees", 10, 300, 100, step=10)
+    max_depth_rf = st.slider("Max Depth", 1, 30, 10)
+    criterion_rf = st.selectbox("Criterion RF", ["gini", "entropy"])
+    
+    if st.button("Train Random Forest"):
+        model = RandomForestClassifier(
+            n_estimators=n_estimators_rf,
+            max_depth=max_depth_rf,
+            criterion=criterion_rf,
+            random_state=42
+        )
+        run_classification(model, "Random Forest")
+
