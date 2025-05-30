@@ -105,23 +105,35 @@ with st.expander('🧹 Pre-Processing Data'):
 
 # ===== Model Manual =====
 def custom_logistic_regression(X_train, y_train, X_test):
-    from math import exp
+    # One-vs-Rest untuk multi-kelas
+    classes = np.unique(y_train)
     X_train = np.insert(X_train.values, 0, 1, axis=1)
     X_test = np.insert(X_test.values, 0, 1, axis=1)
-    y_train = y_train.values.reshape(-1, 1)
-    weights = np.zeros((X_train.shape[1], 1))
-    lr = 0.01
-    epochs = 500
+    y_train = y_train.values
 
-    for _ in range(epochs):
-        z = np.dot(X_train, weights)
-        pred = 1 / (1 + np.exp(-z))
-        gradient = np.dot(X_train.T, (pred - y_train)) / len(y_train)
-        weights -= lr * gradient
+    def sigmoid(z):
+        return 1 / (1 + np.exp(-z))
 
-    z_test = np.dot(X_test, weights)
-    y_pred = (1 / (1 + np.exp(-z_test))) >= 0.5
-    return y_pred.astype(int).flatten()
+    def train_binary_logreg(X, y, lr=0.01, epochs=300):
+        weights = np.zeros((X.shape[1],))
+        for _ in range(epochs):
+            z = np.dot(X, weights)
+            pred = sigmoid(z)
+            gradient = np.dot(X.T, (pred - y)) / len(y)
+            weights -= lr * gradient
+        return weights
+
+    weight_dict = {}
+    for cls in classes:
+        y_binary = np.where(y_train == cls, 1, 0)
+        weight_dict[cls] = train_binary_logreg(X_train, y_binary)
+
+    preds = []
+    for x in X_test:
+        probs = {cls: sigmoid(np.dot(x, weight_dict[cls])) for cls in classes}
+        pred_class = max(probs, key=probs.get)
+        preds.append(pred_class)
+    return np.array(preds)
 
 def custom_majority_classifier(X_train, y_train, X_test):
     from collections import Counter
