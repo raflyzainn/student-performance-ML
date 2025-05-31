@@ -85,16 +85,24 @@ with st.expander('🧹 Pre-Processing Data'):
 
 # ===== Visualisasi Data =====
 with st.expander('📊 Data Visualization'):
+    
     st.subheader("📈 Distribusi Nilai Rata-rata Siswa")
-    fig, ax = plt.subplots(figsize=(10, 5))
-    sns.histplot(df['average_score'], bins=20, kde=True, color='skyblue', ax=ax)
-    ax.set_xlabel('Average Score')
-    ax.set_ylabel('Jumlah Siswa')
-    ax.set_title('Histogram Nilai Rata-rata')
-    st.pyplot(fig)
+    if 'average_score' in df.columns:
+        fig, ax = plt.subplots(figsize=(10, 5))
+        sns.histplot(df['average_score'], bins=20, kde=True, color='skyblue', ax=ax)
+        ax.set_xlabel('Average Score')
+        ax.set_ylabel('Jumlah Siswa')
+        ax.set_title('Histogram Nilai Rata-rata')
+        st.pyplot(fig)
+    else:
+        st.warning("⛔ Kolom 'average_score' belum tersedia. Silakan tekan tombol '➕ Hitung Rata-rata dan Grade' di bagian Preprocessing.")
 
     st.subheader("📌 Korelasi Antar Fitur")
-    numeric_features = ['math score', 'reading score', 'writing score', 'average_score']
+    if 'average_score' in df.columns:
+        numeric_features = ['math score', 'reading score', 'writing score', 'average_score']
+    else:
+        numeric_features = ['math score', 'reading score', 'writing score']
+    
     corr = df[numeric_features].corr()
     fig_corr, ax_corr = plt.subplots(figsize=(8, 6))
     sns.heatmap(corr, annot=True, cmap='coolwarm', ax=ax_corr)
@@ -102,12 +110,15 @@ with st.expander('📊 Data Visualization'):
     st.pyplot(fig_corr)
 
     st.subheader("🎯 Distribusi Grade Siswa")
-    fig_grade, ax_grade = plt.subplots(figsize=(8, 4))
-    sns.countplot(x='grade_category', data=df, order=['A', 'B', 'C', 'D', 'E', 'F'], palette='viridis', ax=ax_grade)
-    ax_grade.set_xlabel('Grade')
-    ax_grade.set_ylabel('Jumlah Siswa')
-    ax_grade.set_title('Distribusi Grade Siswa')
-    st.pyplot(fig_grade)
+    if 'grade_category' in df.columns:
+        fig_grade, ax_grade = plt.subplots(figsize=(8, 4))
+        sns.countplot(x='grade_category', data=df, order=['A', 'B', 'C', 'D', 'E', 'F'], palette='viridis', ax=ax_grade)
+        ax_grade.set_xlabel('Grade')
+        ax_grade.set_ylabel('Jumlah Siswa')
+        ax_grade.set_title('Distribusi Grade Siswa')
+        st.pyplot(fig_grade)
+    else:
+        st.warning("⛔ Kolom 'grade_category' belum tersedia. Silakan tekan tombol '➕ Hitung Rata-rata dan Grade' di bagian Preprocessing.")
 
 # ===== Model Manual =====
 def custom_logistic_regression(X_train, y_train, X_test):
