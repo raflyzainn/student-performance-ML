@@ -28,8 +28,6 @@ def GradeCategory(avg):
 if 'df' not in st.session_state:
     df = pd.read_csv("StudentsPerformance.csv")
     df.columns = [str(col).strip() for col in df.columns]
-    df['average_score'] = df[['math score', 'reading score', 'writing score']].mean(axis=1)
-    df['grade_category'] = df['average_score'].apply(GradeCategory)
     st.session_state.df = df.copy()
 
 df = st.session_state.df
@@ -79,6 +77,14 @@ with st.expander('📊 Data Visualization'):
 
 # ===== Preprocessing =====
 with st.expander('🧹 Pre-Processing Data'):
+    if st.button("➕ Hitung Rata-rata dan Grade"):
+        df['average_score'] = df[['math score', 'reading score', 'writing score']].mean(axis=1)
+        df['grade_category'] = df['average_score'].apply(GradeCategory)
+        st.session_state.df = df.copy()
+        st.success("✅ Kolom average_score dan grade_category berhasil ditambahkan.")
+        st.dataframe(df)
+
+    
     if st.button("🧽 Drop Missing Values"):
         df.dropna(inplace=True)
         st.session_state.df = df
