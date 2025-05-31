@@ -47,7 +47,11 @@ with st.expander('📁 Data'):
     st.dataframe(df.describe())
 
     st.subheader("🔢 Jumlah Data Tiap Grade")
-    st.dataframe(df['grade_category'].value_counts())
+    if 'grade_category' in df.columns:
+        st.dataframe(df['grade_category'].value_counts())
+    else:
+        st.warning("⛔ Kolom 'grade_category' belum tersedia. Silakan tekan tombol '➕ Hitung Rata-rata dan Grade' terlebih dahulu.")
+
 
 # ===== Preprocessing =====
 with st.expander('🧹 Pre-Processing Data'):
