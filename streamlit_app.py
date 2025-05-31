@@ -62,13 +62,6 @@ with st.expander('🧹 Pre-Processing Data'):
         st.success("✅ Kolom average_score dan grade_category berhasil ditambahkan.")
         st.dataframe(df)
 
-    
-    if st.button("🧽 Drop Missing Values"):
-        df.dropna(inplace=True)
-        st.session_state.df = df
-        st.success("✅ Missing values dihapus.")
-        st.dataframe(df)
-
     if st.button("🔠 Label Encoding + Scaling"):
         le = LabelEncoder()
         df['grade_label'] = le.fit_transform(df['grade_category'])
